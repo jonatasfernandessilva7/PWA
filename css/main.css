@@ -400,3 +400,24 @@ footer {
     transform: translateY(-5px);
     border-left-width: 6px;
 }
+
+.project-link {
+    display: inline-block;
+    margin-top: 0.6rem;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.project-link:hover {
+    text-decoration: underline;
+}
+
+.loader {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    grid-column: 1 / -1;
+}

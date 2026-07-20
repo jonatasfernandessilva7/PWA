@@ -130,8 +130,71 @@
         }
     }
 
+    // ---------- BUSCA DE PUBLICAÇÕES NO ORCID ----------
+    async function fetchORCIDPublications() {
+        const container = document.getElementById('publicationsContainer');
+        if (!container) return;
+
+        container.innerHTML = '<div class="loader">📄 Buscando publicações no ORCID...</div>';
+
+        const orcidId = '0009-0002-6937-2964';
+
+        try {
+            const url = `https://pub.orcid.org/v3.0/${orcidId}/works`;
+            const response = await fetch(url, {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erro ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            const groups = data.group || [];
+
+            if (groups.length === 0) {
+                container.innerHTML = '<div class="loader">📭 Nenhuma publicação cadastrada no ORCID ainda.</div>';
+                return;
+            }
+
+            // Ordena por ano (mais recente primeiro)
+            const works = groups.map(group => group['work-summary'][0]);
+            works.sort((a, b) => {
+                const yearA = parseInt(a['publication-date']?.year?.value) || 0;
+                const yearB = parseInt(b['publication-date']?.year?.value) || 0;
+                return yearB - yearA;
+            });
+
+            container.innerHTML = works.map(work => {
+                const title = work.title?.title?.value || 'Título não disponível';
+                const journal = work['journal-title']?.value || '';
+                const year = work['publication-date']?.year?.value || '';
+                const typeRaw = work.type || '';
+                const type = typeRaw.replace(/-/g, ' ');
+
+                const externalIds = work['external-ids']?.['external-id'] || [];
+                const idWithUrl = externalIds.find(id => id['external-id-url']?.value);
+                const link = idWithUrl
+                    ? idWithUrl['external-id-url'].value
+                    : `https://orcid.org/${orcidId}`;
+
+                return `
+                    <div class="course-card">
+                        <div class="course-title">📄 ${title}</div>
+                        <div>${journal ? journal + ' · ' : ''}${type}${year ? ' · ' + year : ''}</div>
+                        <a href="${link}" target="_blank" class="project-link">Ver publicação →</a>
+                    </div>
+                `;
+            }).join('');
+
+        } catch (error) {
+            console.error('Erro ao buscar publicações do ORCID:', error);
+            container.innerHTML = `<div class="loader">💥 Erro ao carregar publicações: ${error.message}. Tente novamente mais tarde.</div>`;
+        }
+    }
+
     // ---------- Navegação entre seções ----------
-    const sections = ['sobre', 'habilidades', 'cursos', 'projetos', 'experiencia'];
+    const sections = ['sobre', 'habilidades', 'cursos', 'projetos', 'publicacoes', 'experiencia'];
     function activateSection(sectionId) {
         sections.forEach(id => {
             const sec = document.getElementById(id);
@@ -186,6 +249,7 @@
     renderCourses();
     renderExperience();
     fetchGitHubProjects();  // Busca projetos da API
+    fetchORCIDPublications();  // Busca publicações do ORCID
 
     // Efeito na imagem de perfil
     const profileImg = document.getElementById('profileImage');
